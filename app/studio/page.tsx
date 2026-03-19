@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Sparkles, ChevronDown, ChevronUp, AlertCircle, Settings2 } from "lucide-react";
 import StudioHeader from "@/components/layout/StudioHeader";
 import MachineSetupForm from "@/components/machine/MachineSetupForm";
@@ -19,6 +19,9 @@ import {
 
 type ActivePanel = "setup" | "input" | "results" | "edit" | "export";
 
+const STORAGE_KEY_CONFIG = "loomai_machine_config";
+const STORAGE_KEY_DESIGNS = "loomai_design_history";
+
 export default function StudioPage() {
   const [config, setConfig] = useState<MachineConfig>(DEFAULT_MACHINE_CONFIG);
   const [designInput, setDesignInput] = useState<DesignInput>({ type: "text", textPrompt: "" });
@@ -33,6 +36,29 @@ export default function StudioPage() {
   const [currentStep, setCurrentStep] = useState<StudioStep>(1);
   const [mobilePanel, setMobilePanel] = useState<ActivePanel>("setup");
   const [setupExpanded, setSetupExpanded] = useState(true);
+
+  // ─── Persistence ──────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    const savedConfig = localStorage.getItem(STORAGE_KEY_CONFIG);
+    if (savedConfig) {
+      try { setConfig(JSON.parse(savedConfig)); } catch (e) { console.warn("Failed to load saved config", e); }
+    }
+    const savedDesigns = localStorage.getItem(STORAGE_KEY_DESIGNS);
+    if (savedDesigns) {
+      try { setVariations(JSON.parse(savedDesigns)); } catch (e) { console.warn("Failed to load saved designs", e); }
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(config));
+  }, [config]);
+
+  useEffect(() => {
+    if (variations.length > 0) {
+      localStorage.setItem(STORAGE_KEY_DESIGNS, JSON.stringify(variations.slice(0, 10)));
+    }
+  }, [variations]);
 
   const selectedVariation = variations.find((v) => v.id === selectedId) ?? null;
 
